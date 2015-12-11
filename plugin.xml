@@ -16,19 +16,21 @@
 	<engine name="cordova" version=">=3.3.0" />
 </engines>
 
-<js-module src="www/generateIDcode.js" name="generateIDcode.js">
-	<clobbers target="generateIDcode" />
+<js-module src="www/generateIDCode.js" name="generateIDCode.js">
+	<clobbers target="generateIDCode" />
 </js-module>
 
 <!-- ios -->
 <platform name="ios">
 	<config-file target="config.xml" parent="/widget">
-		<feature name="generateIDcode">
-			<param name="ios-package" value="generateIDcode" />
+		<feature name="generateIDCode">
+			<param name="ios-package" value="generateIDCode" />
 		</feature>
 	</config-file>
 
-	<header-file src="src/ios/generateIDcode.h" />
-	<source-file src="src/ios/generateIDcode.m" />
+	<header-file src="src/ios/generateIDCode.h" />
+	<source-file src="src/ios/generateIDCode.m" />
+    <header-file src="src/ios/NSString+MD5.h" />
+    <source-file src="src/ios/NSString+MD5.m" />
 </platform>
 </plugin>

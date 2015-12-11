@@ -1,21 +1,25 @@
 //
-//  operatePlist.h
-//  transfer
+//  generateIDcode.h
+//  myshop
 //
-//  Created by LEIBI on 11/18/15.
+//  Created by LEIBI on 12/10/15.
 //  Copyright © 2015 LEIBI. All rights reserved.
 //
 
 #import <Cordova/CDV.h>
+#import "sqlite3.h"
+#import "operatePlist.h"
+#import "NSString+MD5.h"
+#import "operatePlist.h"
 
-@interface operatePlist : CDVPlugin
+@interface generateIDCode : CDVPlugin
 {
-    
+    sqlite3 *database;
 }
 
-- (void)writePlist:(CDVInvokedUrlCommand *)command;
-- (BOOL)write:(NSString *)fileName withInfo:(NSDictionary *)info;
-- (void)readPlist:(CDVInvokedUrlCommand *)command;
-- (NSDictionary *)read:(NSString *)fileName;
-
+- (void)idCode:(CDVInvokedUrlCommand *)command;
+- (NSString *)idCode:(NSString *)type
+          withUserID:(NSString *)user_id
+           withDevID:(NSString *)dev_id
+          withNumber:(int) num;
 @end
