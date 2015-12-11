@@ -131,6 +131,7 @@
             break;
         case 25://录音
             p1 = @"LY";
+            break;
         default:
             NSLog(@"error! out of type list!");
             break;
@@ -152,15 +153,15 @@
     p5 = [dateFormat stringFromDate:[NSDate date]];
     NSLog(@"p5: %@", p5);
     
-    NSMutableString *sql = [[NSMutableString alloc] initWithString:@"select * from COUNT"];
-    [sql appendFormat:@"where type = %@", p1];
+    NSMutableString *sql = [[NSMutableString alloc] initWithString:@"select * from COUNT "];
+    [sql appendFormat:@"where type = \"%@\"", p1];
     
     NSMutableArray *searchResult = [[NSMutableArray alloc] initWithArray:[self searchData:sql]];
     if ([searchResult count] == 0) {
         num = 1;
-        NSNumber *numObj = [[NSNumber alloc] initWithInt:num];
+        NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
         NSString *sql = @"INSERT INTO COUNT (count, date, type) VALUES (?, ?, ?)";
-        NSArray *column = [[NSArray alloc] initWithObjects:numObj, p5, p1, nil];
+        NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, p1, nil];
         NSMutableArray *insertSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
         NSMutableArray *insertRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
         [self saveData:insertRecord withSql:insertSql];
@@ -168,15 +169,15 @@
     else {
         NSMutableDictionary *count = [[NSMutableDictionary alloc] initWithDictionary:[searchResult objectAtIndex:0]];
         if ([[count objectForKey:@"date"] isEqualToString:p5]) {
-            num = (int)[count objectForKey:@"count"] + 1;
+            num = [[count valueForKey:@"count"] intValue]+ 1;
         }
         else {
             num = 1;
             [count setObject:p5 forKey:@"date"];
         }
-        NSNumber *numObj = [[NSNumber alloc] initWithInt:num];
-        NSString *sql = @"UPDATE COUNT SET date = ? , count = ?";
-        NSArray *column = [[NSArray alloc] initWithObjects:numObj, p5, nil];
+        NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
+        NSString *sql = @"UPDATE COUNT SET count = ? ,  date = ?";
+        NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, nil];
         NSMutableArray *updateSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
         NSMutableArray *updateRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
         [self saveData:updateRecord withSql:updateSql];
@@ -190,44 +191,55 @@
 - (void)saveData:(NSMutableArray *)record withSql:(NSMutableArray *)sql{
     //NSLog(@"begin to insert records into database");
     
+    NSString *folderName = [[NSString alloc] init];
+    NSString *writableDBPath = [self GetPathByFolderName:folderName withFileName:@"myshop"];
+    
     NSArray *column = [[NSArray alloc] init];
     bool resultStatus = false;
     char *errorMsg;
     @try {
-        if (sqlite3_exec(database, "BEGIN", NULL, NULL, &errorMsg) == SQLITE_OK) {
-            NSLog(@"sqlite transaction is launch!");
-            sqlite3_free(errorMsg);
-            
-            sqlite3_stmt *statement;
-            //NSLog(@"%lu", (unsigned long)[sql count]);
-            for (int i = 0; i < [sql count]; i++) {
-                //NSLog(@"%@", [sql objectAtIndex:i]);
-                if (sqlite3_prepare_v2(database, [[sql objectAtIndex:i] UTF8String], -1, &statement, NULL) == SQLITE_OK) {
-                    column = [record objectAtIndex:i];
-                    for (int j = 0; j < [column count]; j++) {
-                        //NSLog(@"%@", [column objectAtIndex:j]);
-                        sqlite3_bind_text(statement, (j+1), [[column objectAtIndex:j] UTF8String], -1, NULL);
+        const char* cpath = [writableDBPath UTF8String];
+        if (sqlite3_open(cpath, &database) != SQLITE_OK) {
+            sqlite3_close(database);
+            NSAssert(NO, @"open database is filure!");
+        }
+        else {
+            if (sqlite3_exec(database, "BEGIN", NULL, NULL, &errorMsg) == SQLITE_OK) {
+                NSLog(@"sqlite transaction is launch!");
+                sqlite3_free(errorMsg);
+                
+                sqlite3_stmt *statement;
+                //NSLog(@"%lu", (unsigned long)[sql count]);
+                for (int i = 0; i < [sql count]; i++) {
+                    //NSLog(@"%@", [sql objectAtIndex:i]);
+                    if (sqlite3_prepare_v2(database, [[sql objectAtIndex:i] UTF8String], -1, &statement, NULL) == SQLITE_OK) {
+                        column = [record objectAtIndex:i];
+                        for (int j = 0; j < [column count]; j++) {
+                            //NSLog(@"%@", [column objectAtIndex:j]);
+                            sqlite3_bind_text(statement, (j+1), [[column objectAtIndex:j] UTF8String], -1, NULL);
+                        }
+                        if (sqlite3_step(statement) == SQLITE_DONE) {
+                            resultStatus = YES;
+                            sqlite3_finalize(statement);
+                        } else {
+                            resultStatus = NO;
+                        }
                     }
-                    if (sqlite3_step(statement) == SQLITE_DONE) {
-                        resultStatus = YES;
-                        sqlite3_finalize(statement);
-                    } else {
-                        resultStatus = NO;
+                    else {
+                        NSLog(@"Error: %s", sqlite3_errmsg(database));
+                        NSAssert1(0, @"Error: %s", sqlite3_errmsg(database));
                     }
                 }
-                else {
-                    NSLog(@"Error: %s", sqlite3_errmsg(database));
-                    NSAssert1(0, @"Error: %s", sqlite3_errmsg(database));
+                if (sqlite3_exec(database, "COMMIT", NULL, NULL, &errorMsg) == SQLITE_OK) {
+                    NSLog(@"sqlite transaction commit success!");
                 }
+                sqlite3_free(errorMsg);
             }
-            if (sqlite3_exec(database, "COMMIT", NULL, NULL, &errorMsg) == SQLITE_OK) {
-                NSLog(@"sqlite transaction commit success!");
+            else {
+                NSLog(@"Error: %s", sqlite3_errmsg(database));
+                NSAssert1(0, @"Error: %s", sqlite3_errmsg(database));
+                sqlite3_free(errorMsg);
             }
-            sqlite3_free(errorMsg);
-        } else {
-            NSLog(@"Error: %s", sqlite3_errmsg(database));
-            NSAssert1(0, @"Error: %s", sqlite3_errmsg(database));
-            sqlite3_free(errorMsg);
         }
     }
     @catch (NSException *exception) {

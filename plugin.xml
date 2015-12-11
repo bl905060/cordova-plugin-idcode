@@ -27,9 +27,9 @@
 			<param name="ios-package" value="generateIDCode" />
 		</feature>
 	</config-file>
-
-	<header-file src="src/ios/generateIDCode.h" />
-	<source-file src="src/ios/generateIDCode.m" />
+    
+    <header-file src="src/ios/generateIDCode.h" />
+    <source-file src="src/ios/generateIDCode.m" />
     <header-file src="src/ios/NSString+MD5.h" />
     <source-file src="src/ios/NSString+MD5.m" />
 </platform>
