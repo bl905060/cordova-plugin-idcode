@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
-	id="cordova-plugin-idcode" version="0.0.1">
+	id="cordova-plugin-idcode" version="0.0.2">
 
 <name>generate identification code</name>
 
@@ -19,6 +19,10 @@
 <js-module src="www/generateIDCode.js" name="generateIDCode.js">
 	<clobbers target="generateIDCode" />
 </js-module>
+
+<dependency id="cordova-plugin-operate-plist" url="https://github.com/bl905060/cordova-plugin-operate-plist.git" />
+<dependency id="Cordova-sqlite-storage" url="https://github.com/litehelpers/Cordova-sqlite-storage" />
+
 
 <!-- ios -->
 <platform name="ios">
