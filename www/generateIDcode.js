@@ -1,10 +1,18 @@
 module.exports = {
-    idcode : function(type, user_id, dev_id, num, successCallback, errorCallback) {
-        cordova.exec(successCallback,
-                     errorCallback,
+    idCode : function(type, successHandler, errorHandler) {
+        cordova.exec(successHandler,
+                     errorHandler,
                      "generateIDCode",
                      "idCode",
-                     [type, user_id, dev_id, num]);
+                     [type]);
         
+    },
+    
+    shortCode : function() {type, successHandler, errorHandler) {
+        cordova.exec(successHandler,
+                     errorHandler,
+                     "generateIDCode",
+                     "shortCode",
+                     [type]);
     }
 };
