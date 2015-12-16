@@ -8,11 +8,19 @@ module.exports = {
         
     },
     
-    shortCode : function() {type, successHandler, errorHandler) {
+    shortCode : function(type, successHandler, errorHandler) {
         cordova.exec(successHandler,
                      errorHandler,
                      "generateIDCode",
                      "shortCode",
                      [type]);
+    },
+        
+    devID : function(successHandler, errorHandler) {
+        cordova.exec(successHandler,
+                     errorHandler,
+                     "generateIDCode",
+                     "devID",
+                     []);
     }
 };
