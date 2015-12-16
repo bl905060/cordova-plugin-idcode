@@ -11,7 +11,7 @@
 @implementation generateIDCode
 
 - (void)idCode:(CDVInvokedUrlCommand *)command {
-    NSLog(@"begin to generate idcode");
+    NSLog(@"begin to generate idcode!");
     
     CDVPluginResult *pluginResult;
     NSString *callbackID = [command callbackId];
@@ -34,8 +34,60 @@
         devID = [command argumentAtIndex:2];
     }
     
-    result = [self idCode:type withUserID:userID withDevID:devID withNumber:(int)intNum];
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:result];
+    NSString *p1 = [self typeList:type];
+    if (![p1 isEqualToString:@"error"]) {
+        result = [self idCode:p1 withUserID:userID withDevID:devID withNumber:[intNum intValue]];
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:result];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackID];
+    }
+    else {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                         messageAsString:@"type out of range!"];
+    }
+}
+
+- (void)shortCode:(CDVInvokedUrlCommand *)command {
+    NSLog(@"begin to generate shortCode!");
+    
+    CDVPluginResult *pluginResult;
+    NSString *callbackID = [command callbackId];
+    NSString *result = [[NSString alloc] init];
+    NSString *type = [command argumentAtIndex:0];
+    NSString *intNum = [command argumentAtIndex:1];
+    NSString *p1 = [self typeList:type];
+    
+    if (![p1 isEqualToString:@"error"]) {
+        result = [self shortCode:p1 withNumber:[intNum intValue]];
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:result];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackID];
+    }
+    else {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                         messageAsString:@"type out of range!"];
+    }
+
+}
+
+- (void)devID:(CDVInvokedUrlCommand *)command {
+    NSLog(@"begin to generate dev_id!");
+    
+    CDVPluginResult *pluginResult;
+    NSString *callbackID = [command callbackId];
+    NSString *p1 = [[NSString alloc] init];
+    NSString *p2 = [[NSString alloc] init];
+    
+    NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
+    [dateFormat setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    p1 = [dateFormat stringFromDate:[NSDate date]];
+    NSLog(@"p1: %@", p1);
+    
+    p2 = [[[p1 MD5String] substringWithRange:NSMakeRange(0, 12)] uppercaseString];
+    NSDictionary *info = [[NSDictionary alloc] initWithObjectsAndKeys:p2, @"dev_id", nil];
+    
+    operatePlist *writePlist = [[operatePlist alloc] init];
+    [writePlist write:@"userinfo" withInfo:info];
+    
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackID];
 }
 
@@ -50,92 +102,8 @@
     NSString *p4 = [[NSString alloc] init];
     NSString *p5 = [[NSString alloc] init];
     
-    NSArray *typeList = [[NSArray alloc] initWithObjects:@"SP", @"FH", @"SH", @"PP", @"DW", @"CG", @"XS", @"TP", @"SK", @"FK", @"FP", @"PZ", @"XT", @"CT", @"LX", @"CA", @"CJ", @"XQ", @"HF", @"FB", @"GS", @"WL", @"ZW", @"XX", @"BC", @"LY", nil];
-    
     //根据前缀生成P1
-    switch ([typeList indexOfObject:type]) {
-        case 0://商品
-            p1 = @"SP";
-            break;
-        case 1://发货
-            p1 = @"FH";
-            break;
-        case 2://收货
-            p1 = @"SH";
-            break;
-        case 3://商品品牌
-            p1 = @"PP";
-            break;
-        case 4://商品单位
-            p1 = @"DW";
-            break;
-        case 5://采购
-            p1 = @"CG";
-            break;
-        case 6://销售
-            p1 = @"XS";
-            break;
-        case 7://图片
-            p1 = @"TP";
-            break;
-        case 8://收款
-            p1 = @"SK";
-            break;
-        case 9://付款
-            p1 = @"FK";
-            break;
-        case 10://发票
-            p1 = @"FP";
-            break;
-        case 11://附件
-            p1 = @"PZ";
-            break;
-        case 12://销售退货
-            p1 = @"XT";
-            break;
-        case 13://采购退货
-            p1 = @"CT";
-            break;
-        case 14://联系人
-            p1 = @"LX";
-            break;
-        case 15://商品类型
-            p1 = @"CA";
-            break;
-        case 16://生产厂家
-            p1 = @"CJ";
-            break;
-        case 17://需求
-            p1 = @"XQ";
-            break;
-        case 18://回复
-            p1 = @"HF";
-            break;
-        case 19://发布商品
-            p1 = @"FB";
-            break;
-        case 20://公司
-            p1 = @"GS";
-            break;
-        case 21://物流
-            p1 = @"WL";
-            break;
-        case 22://职位
-            p1 = @"ZW";
-            break;
-        case 23://消息
-            p1 = @"XX";
-            break;
-        case 24://基础联系人ID
-            p1 = @"BC";
-            break;
-        case 25://录音
-            p1 = @"LY";
-            break;
-        default:
-            NSLog(@"error! out of type list!");
-            break;
-    }
+    p1 = type;
     NSLog(@"p1: %@", p1);
     
     //根据user_id产生MD5生成P2
@@ -186,6 +154,153 @@
     p4 = [NSString stringWithFormat:@"%04d", num];
     result = [NSString stringWithFormat:@"%@%@%@%@", p1, p2, p3, p4];
     return result;
+}
+
+- (NSString *)shortCode:(NSString *)type withNumber:(int)num {
+    NSString *result;
+    NSString *p1 = [[NSString alloc] init];
+    NSString *p3 = [[NSString alloc] init];
+    NSString *p4 = [[NSString alloc] init];
+    NSString *p5 = [[NSString alloc] init];
+    
+    p1 = type;
+    NSLog(@"p1: %@", p1);
+    
+    NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
+    [dateFormat setDateFormat:@"yyMMdd"];
+    p3 = [dateFormat stringFromDate:[NSDate date]];
+    NSLog(@"p3: %@", p3);
+    
+    [dateFormat setDateFormat:@"yyMMddHH"];
+    p5 = [dateFormat stringFromDate:[NSDate date]];
+    NSLog(@"p5: %@", p5);
+    
+    NSMutableString *sql = [[NSMutableString alloc] initWithString:@"select * from COUNT "];
+    [sql appendFormat:@"where type = \"%@\"", p1];
+    
+    NSMutableArray *searchResult = [[NSMutableArray alloc] initWithArray:[self searchData:sql]];
+    if ([searchResult count] == 0) {
+        num = 1;
+        NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
+        NSString *sql = @"INSERT INTO COUNT (count, date, type) VALUES (?, ?, ?)";
+        NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, p1, nil];
+        NSMutableArray *insertSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
+        NSMutableArray *insertRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
+        [self saveData:insertRecord withSql:insertSql];
+    }
+    else {
+        NSMutableDictionary *count = [[NSMutableDictionary alloc] initWithDictionary:[searchResult objectAtIndex:0]];
+        if ([[count objectForKey:@"date"] isEqualToString:p5]) {
+            num = [[count valueForKey:@"count"] intValue]+ 1;
+        }
+        else {
+            num = 1;
+            [count setObject:p5 forKey:@"date"];
+        }
+        NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
+        NSString *sql = @"UPDATE COUNT SET count = ? ,  date = ?";
+        NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, nil];
+        NSMutableArray *updateSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
+        NSMutableArray *updateRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
+        [self saveData:updateRecord withSql:updateSql];
+    }
+
+    p4 = [NSString stringWithFormat:@"%04d", num];
+    result = [NSString stringWithFormat:@"%@%@%@", p1, p3, p4];
+    return result;
+}
+
+- (NSString *)typeList:(NSString *)type {
+    NSArray *typeList = [[NSArray alloc] initWithObjects:@"SP", @"FH", @"SH", @"PP", @"DW", @"CG", @"XS", @"TP", @"SK", @"FK", @"FP", @"PZ", @"XT", @"CT", @"LX", @"CA", @"CJ", @"XQ", @"HF", @"FB", @"GS", @"WL", @"ZW", @"XX", @"BC", @"LY", nil];
+    
+    NSString *p1 = [[NSString alloc] init];
+    
+    switch ([typeList indexOfObject:type]) {
+        case 0://商品
+        p1 = @"SP";
+        break;
+        case 1://发货
+        p1 = @"FH";
+        break;
+        case 2://收货
+        p1 = @"SH";
+        break;
+        case 3://商品品牌
+        p1 = @"PP";
+        break;
+        case 4://商品单位
+        p1 = @"DW";
+        break;
+        case 5://采购
+        p1 = @"CG";
+        break;
+        case 6://销售
+        p1 = @"XS";
+        break;
+        case 7://图片
+        p1 = @"TP";
+        break;
+        case 8://收款
+        p1 = @"SK";
+        break;
+        case 9://付款
+        p1 = @"FK";
+        break;
+        case 10://发票
+        p1 = @"FP";
+        break;
+        case 11://附件
+        p1 = @"PZ";
+        break;
+        case 12://销售退货
+        p1 = @"XT";
+        break;
+        case 13://采购退货
+        p1 = @"CT";
+        break;
+        case 14://联系人
+        p1 = @"LX";
+        break;
+        case 15://商品类型
+        p1 = @"CA";
+        break;
+        case 16://生产厂家
+        p1 = @"CJ";
+        break;
+        case 17://需求
+        p1 = @"XQ";
+        break;
+        case 18://回复
+        p1 = @"HF";
+        break;
+        case 19://发布商品
+        p1 = @"FB";
+        break;
+        case 20://公司
+        p1 = @"GS";
+        break;
+        case 21://物流
+        p1 = @"WL";
+        break;
+        case 22://职位
+        p1 = @"ZW";
+        break;
+        case 23://消息
+        p1 = @"XX";
+        break;
+        case 24://基础联系人ID
+        p1 = @"BC";
+        break;
+        case 25://录音
+        p1 = @"LY";
+        break;
+        default:
+        NSLog(@"error! out of type list!");
+        p1 = @"error";
+        break;
+    }
+
+    return p1;
 }
 
 - (void)saveData:(NSMutableArray *)record withSql:(NSMutableArray *)sql{

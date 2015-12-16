@@ -18,8 +18,12 @@
 }
 
 - (void)idCode:(CDVInvokedUrlCommand *)command;
+- (void)shortCode:(CDVInvokedUrlCommand *)command;
+- (void)devID:(CDVInvokedUrlCommand *)command;
+
 - (NSString *)idCode:(NSString *)type
           withUserID:(NSString *)user_id
            withDevID:(NSString *)dev_id
           withNumber:(int) num;
+- (NSString *)shortCode:(NSString *)type withNumber:(int) num;
 @end
