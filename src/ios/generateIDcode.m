@@ -19,19 +19,29 @@
     NSString *type = [command argumentAtIndex:0];
     NSString *userID = [[NSString alloc] init];
     NSString *devID = [[NSString alloc] init];
-    NSString *intNum = [command argumentAtIndex:3];
+    NSString *intNum = [[NSString alloc] init];
+    operatePlist *readPlist = [[operatePlist alloc] init];
+    NSDictionary *userinfo = [[NSDictionary alloc] initWithDictionary:[readPlist read:@"userinfo"]];
     
     if ([command argumentAtIndex:1] != nil) {
         userID = [command argumentAtIndex:1];
     }
     else {
-        operatePlist *readPlist = [[operatePlist alloc] init];
-        NSDictionary *userinfo = [[NSDictionary alloc] initWithDictionary:[readPlist read:@"userinfo"]];
         userID = [userinfo objectForKey:@"user_id"];
     }
     
     if ([command argumentAtIndex:2] != nil) {
         devID = [command argumentAtIndex:2];
+    }
+    else {
+        devID = [userinfo objectForKey:@"dev_id"];
+    }
+    
+    if ([command argumentAtIndex:3] != nil) {
+        intNum = [command argumentAtIndex:3];
+    }
+    else {
+        intNum = @"-1";
     }
     
     NSString *p1 = [self typeList:type];
@@ -53,8 +63,15 @@
     NSString *callbackID = [command callbackId];
     NSString *result = [[NSString alloc] init];
     NSString *type = [command argumentAtIndex:0];
-    NSString *intNum = [command argumentAtIndex:1];
+    NSString *intNum = [[NSString alloc] init];
     NSString *p1 = [self typeList:type];
+    
+    if ([command argumentAtIndex:1] != nil) {
+        intNum = [command argumentAtIndex:1];
+    }
+    else {
+        intNum = @"-1";
+    }
     
     if (![p1 isEqualToString:@"error"]) {
         result = [self shortCode:p1 withNumber:[intNum intValue]];
@@ -91,6 +108,35 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackID];
 }
 
+- (void)MD5:(CDVInvokedUrlCommand *)command {
+    NSLog(@"begin to generate MD5!");
+    
+    CDVPluginResult *pluginResult;
+    NSString *callbackID = [command callbackId];
+    NSString *result = [[NSString alloc] init];
+    NSString *key = [[NSString alloc] init];
+    NSString *error = [[NSString alloc] init];
+    
+    if ([command argumentAtIndex:0] != nil) {
+        key = [command argumentAtIndex:0];
+        result = [key MD5String];
+    }
+    else {
+        error = @"input is error!";
+    }
+    
+    if (error.length > 0) {
+        NSLog(@"input is error!");
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackID];
+    }
+    else {
+        NSLog(@"MD5 is generated!");
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:result];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackID];
+    }
+}
+
 - (NSString *)idCode:(NSString *)type
           withUserID:(NSString *)user_id
            withDevID:(NSString *)dev_id
@@ -107,7 +153,8 @@
     NSLog(@"p1: %@", p1);
     
     //根据user_id产生MD5生成P2
-    p2 = [[[user_id MD5String] substringWithRange:NSMakeRange(0, 12)] uppercaseString];
+    p2 = [NSString stringWithFormat:@"%@%@", user_id, dev_id];
+    p2 = [[[p2 MD5String] substringWithRange:NSMakeRange(0, 12)] uppercaseString];
     NSLog(@"p2: %@", p2);
     
     //根据当前时间格式yyMMddHHmmss生成P3
@@ -116,39 +163,41 @@
     p3 = [dateFormat stringFromDate:[NSDate date]];
     NSLog(@"p3: %@", p3);
     
-    //根据当前时间格式yyMMddHH生成P5
-    [dateFormat setDateFormat:@"yyMMddHH"];
-    p5 = [dateFormat stringFromDate:[NSDate date]];
-    NSLog(@"p5: %@", p5);
-    
-    NSMutableString *sql = [[NSMutableString alloc] initWithString:@"select * from COUNT "];
-    [sql appendFormat:@"where type = \"%@\"", p1];
-    
-    NSMutableArray *searchResult = [[NSMutableArray alloc] initWithArray:[self searchData:sql]];
-    if ([searchResult count] == 0) {
-        num = 1;
-        NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
-        NSString *sql = @"INSERT INTO COUNT (count, date, type) VALUES (?, ?, ?)";
-        NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, p1, nil];
-        NSMutableArray *insertSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
-        NSMutableArray *insertRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
-        [self saveData:insertRecord withSql:insertSql];
-    }
-    else {
-        NSMutableDictionary *count = [[NSMutableDictionary alloc] initWithDictionary:[searchResult objectAtIndex:0]];
-        if ([[count objectForKey:@"date"] isEqualToString:p5]) {
-            num = [[count valueForKey:@"count"] intValue]+ 1;
+    if (num == -1) {
+        //根据当前时间格式yyMMddHH生成P5
+        [dateFormat setDateFormat:@"yyMMddHH"];
+        p5 = [dateFormat stringFromDate:[NSDate date]];
+        NSLog(@"p5: %@", p5);
+        
+        NSMutableString *sql = [[NSMutableString alloc] initWithString:@"select * from COUNT "];
+        [sql appendFormat:@"where type = \"%@\"", p1];
+        
+        NSMutableArray *searchResult = [[NSMutableArray alloc] initWithArray:[self searchData:sql]];
+        if ([searchResult count] == 0) {
+            num = 1;
+            NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
+            NSString *sql = @"INSERT INTO COUNT (count, date, type) VALUES (?, ?, ?)";
+            NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, p1, nil];
+            NSMutableArray *insertSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
+            NSMutableArray *insertRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
+            [self saveData:insertRecord withSql:insertSql];
         }
         else {
-            num = 1;
-            [count setObject:p5 forKey:@"date"];
+            NSMutableDictionary *count = [[NSMutableDictionary alloc] initWithDictionary:[searchResult objectAtIndex:0]];
+            if ([[count objectForKey:@"date"] isEqualToString:p5]) {
+                num = [[count valueForKey:@"count"] intValue]+ 1;
+            }
+            else {
+                num = 1;
+                [count setObject:p5 forKey:@"date"];
+            }
+            NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
+            NSString *sql = @"UPDATE COUNT SET count = ? ,  date = ?";
+            NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, nil];
+            NSMutableArray *updateSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
+            NSMutableArray *updateRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
+            [self saveData:updateRecord withSql:updateSql];
         }
-        NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
-        NSString *sql = @"UPDATE COUNT SET count = ? ,  date = ?";
-        NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, nil];
-        NSMutableArray *updateSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
-        NSMutableArray *updateRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
-        [self saveData:updateRecord withSql:updateSql];
     }
     
     p4 = [NSString stringWithFormat:@"%04d", num];
@@ -171,40 +220,42 @@
     p3 = [dateFormat stringFromDate:[NSDate date]];
     NSLog(@"p3: %@", p3);
     
-    [dateFormat setDateFormat:@"yyMMddHH"];
-    p5 = [dateFormat stringFromDate:[NSDate date]];
-    NSLog(@"p5: %@", p5);
-    
-    NSMutableString *sql = [[NSMutableString alloc] initWithString:@"select * from COUNT "];
-    [sql appendFormat:@"where type = \"%@\"", p1];
-    
-    NSMutableArray *searchResult = [[NSMutableArray alloc] initWithArray:[self searchData:sql]];
-    if ([searchResult count] == 0) {
-        num = 1;
-        NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
-        NSString *sql = @"INSERT INTO COUNT (count, date, type) VALUES (?, ?, ?)";
-        NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, p1, nil];
-        NSMutableArray *insertSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
-        NSMutableArray *insertRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
-        [self saveData:insertRecord withSql:insertSql];
-    }
-    else {
-        NSMutableDictionary *count = [[NSMutableDictionary alloc] initWithDictionary:[searchResult objectAtIndex:0]];
-        if ([[count objectForKey:@"date"] isEqualToString:p5]) {
-            num = [[count valueForKey:@"count"] intValue]+ 1;
+    if (num == -1) {
+        [dateFormat setDateFormat:@"yyMMddHH"];
+        p5 = [dateFormat stringFromDate:[NSDate date]];
+        NSLog(@"p5: %@", p5);
+        
+        NSMutableString *sql = [[NSMutableString alloc] initWithString:@"select * from COUNT "];
+        [sql appendFormat:@"where type = \"%@\"", p1];
+        
+        NSMutableArray *searchResult = [[NSMutableArray alloc] initWithArray:[self searchData:sql]];
+        if ([searchResult count] == 0) {
+            num = 1;
+            NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
+            NSString *sql = @"INSERT INTO COUNT (count, date, type) VALUES (?, ?, ?)";
+            NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, p1, nil];
+            NSMutableArray *insertSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
+            NSMutableArray *insertRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
+            [self saveData:insertRecord withSql:insertSql];
         }
         else {
-            num = 1;
-            [count setObject:p5 forKey:@"date"];
+            NSMutableDictionary *count = [[NSMutableDictionary alloc] initWithDictionary:[searchResult objectAtIndex:0]];
+            if ([[count objectForKey:@"date"] isEqualToString:p5]) {
+                num = [[count valueForKey:@"count"] intValue]+ 1;
+            }
+            else {
+                num = 1;
+                [count setObject:p5 forKey:@"date"];
+            }
+            NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
+            NSString *sql = @"UPDATE COUNT SET count = ? ,  date = ?";
+            NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, nil];
+            NSMutableArray *updateSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
+            NSMutableArray *updateRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
+            [self saveData:updateRecord withSql:updateSql];
         }
-        NSString *numStr = [[NSString alloc] initWithFormat:@"%i", num];
-        NSString *sql = @"UPDATE COUNT SET count = ? ,  date = ?";
-        NSArray *column = [[NSArray alloc] initWithObjects:numStr, p5, nil];
-        NSMutableArray *updateSql = [[NSMutableArray alloc] initWithObjects:sql, nil];
-        NSMutableArray *updateRecord = [[NSMutableArray alloc] initWithObjects:column, nil];
-        [self saveData:updateRecord withSql:updateSql];
     }
-
+    
     p4 = [NSString stringWithFormat:@"%04d", num];
     result = [NSString stringWithFormat:@"%@%@%@", p1, p3, p4];
     return result;

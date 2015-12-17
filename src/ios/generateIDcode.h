@@ -20,6 +20,7 @@
 - (void)idCode:(CDVInvokedUrlCommand *)command;
 - (void)shortCode:(CDVInvokedUrlCommand *)command;
 - (void)devID:(CDVInvokedUrlCommand *)command;
+- (void)MD5:(CDVInvokedUrlCommand *)command;
 
 - (NSString *)idCode:(NSString *)type
           withUserID:(NSString *)user_id
