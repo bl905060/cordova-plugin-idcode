@@ -61,6 +61,7 @@ function successCallBack(result) {
 function errorCallback(error) {
     alert(error);
 }
+```
 
 ## 平台支持
 
