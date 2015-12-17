@@ -7,7 +7,7 @@
 #### 从Github安装最新版本
 
 ```
-cordova plugin add https://github.com/bl905060/cordova-plugin-idcode
+cordova plugin add https://github.com/bl905060/cordova-plugin-md5-idcode
 ```
 
 ## 使用
