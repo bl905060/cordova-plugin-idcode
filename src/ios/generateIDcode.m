@@ -92,17 +92,22 @@
     NSString *callbackID = [command callbackId];
     NSString *p1 = [[NSString alloc] init];
     NSString *p2 = [[NSString alloc] init];
+    NSDictionary *info = [[NSDictionary alloc] init];
+    operatePlist *accessPlist = [[operatePlist alloc] init];
     
-    NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
-    [dateFormat setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-    p1 = [dateFormat stringFromDate:[NSDate date]];
-    NSLog(@"p1: %@", p1);
+    info = [accessPlist read:@"userinfo"];
     
-    p2 = [[[p1 MD5String] substringWithRange:NSMakeRange(0, 12)] uppercaseString];
-    NSDictionary *info = [[NSDictionary alloc] initWithObjectsAndKeys:p2, @"dev_id", nil];
-    
-    operatePlist *writePlist = [[operatePlist alloc] init];
-    [writePlist write:@"userinfo" withInfo:info];
+    if ([info objectForKey:@"dev_id"] == nil) {
+        NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
+        [dateFormat setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+        p1 = [dateFormat stringFromDate:[NSDate date]];
+        NSLog(@"p1: %@", p1);
+        
+        p2 = [[[p1 MD5String] substringWithRange:NSMakeRange(0, 12)] uppercaseString];
+        info = [[NSDictionary alloc] initWithObjectsAndKeys:p2, @"dev_id", nil];
+        
+        [accessPlist write:@"userinfo" withInfo:info];
+    }
     
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackID];
