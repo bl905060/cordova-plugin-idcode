@@ -1,4 +1,4 @@
-##cordova-plugin-idcode
+##cordova-plugin-md5-idcode
 
 **Cordova / PhoneGap ID产生插件**：根据时间、用户ID、设备ID、序列号等信息产生ID信息
 
