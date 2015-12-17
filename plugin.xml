@@ -21,7 +21,7 @@
 </js-module>
 
 <dependency id="cordova-plugin-operate-plist" url="https://github.com/bl905060/cordova-plugin-operate-plist.git" />
-<dependency id="Cordova-sqlite-storage" url="https://github.com/litehelpers/Cordova-sqlite-storage" />
+<dependency id="cordova-sqlite-storage" url="https://github.com/litehelpers/Cordova-sqlite-storage" />
 
 
 <!-- ios -->
